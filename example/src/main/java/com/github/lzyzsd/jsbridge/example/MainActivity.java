@@ -1,5 +1,6 @@
 package com.github.lzyzsd.jsbridge.example;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -10,6 +11,7 @@ import android.view.View.OnClickListener;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.github.lzyzsd.jsbridge.BridgeHandler;
 import com.github.lzyzsd.jsbridge.BridgeWebView;
@@ -17,17 +19,25 @@ import com.github.lzyzsd.jsbridge.CallBackFunction;
 import com.github.lzyzsd.jsbridge.DefaultHandler;
 import com.google.gson.Gson;
 
+import java.io.File;
+
 public class MainActivity extends Activity implements OnClickListener {
 
-	private final String TAG = "MainActivity";
+    private final String TAG = "MainActivity";
 
-	BridgeWebView webView;
+    BridgeWebView webView;
 
-	Button button;
+    Button button;
+    TextView tv;
 
-	int RESULT_CODE = 0;
+    @Override
+    public File getExternalCacheDir() {
+        return super.getExternalCacheDir();
+    }
 
-	ValueCallback<Uri> mUploadMessage;
+    int RESULT_CODE = 0;
+
+    ValueCallback<Uri> mUploadMessage;
 
     static class Location {
         String address;
@@ -36,51 +46,53 @@ public class MainActivity extends Activity implements OnClickListener {
     static class User {
         String name;
         Location location;
-        String testStr;
+        //String testStr;
     }
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        webView = (BridgeWebView) findViewById(R.id.webView);
+        webView = findViewById(R.id.webView);
 
-		button = (Button) findViewById(R.id.button);
+        button = findViewById(R.id.button);
+        tv = findViewById(R.id.tv);
 
-		button.setOnClickListener(this);
+        button.setOnClickListener(this);
 
-		webView.setDefaultHandler(new DefaultHandler());
+        webView.setDefaultHandler(new DefaultHandler());
 
-		webView.setWebChromeClient(new WebChromeClient() {
+        webView.setWebChromeClient(new WebChromeClient() {
 
-			@SuppressWarnings("unused")
-			public void openFileChooser(ValueCallback<Uri> uploadMsg, String AcceptType, String capture) {
-				this.openFileChooser(uploadMsg);
-			}
+            @SuppressWarnings("unused")
+            public void openFileChooser(ValueCallback<Uri> uploadMsg, String AcceptType, String capture) {
+                this.openFileChooser(uploadMsg);
+            }
 
-			@SuppressWarnings("unused")
-			public void openFileChooser(ValueCallback<Uri> uploadMsg, String AcceptType) {
-				this.openFileChooser(uploadMsg);
-			}
+            @SuppressWarnings("unused")
+            public void openFileChooser(ValueCallback<Uri> uploadMsg, String AcceptType) {
+                this.openFileChooser(uploadMsg);
+            }
 
-			public void openFileChooser(ValueCallback<Uri> uploadMsg) {
-				mUploadMessage = uploadMsg;
-				pickFile();
-			}
-		});
+            public void openFileChooser(ValueCallback<Uri> uploadMsg) {
+                mUploadMessage = uploadMsg;
+                pickFile();
+            }
+        });
 
-		webView.loadUrl("file:///android_asset/demo.html");
+        webView.loadUrl("file:///android_asset/demo.html");
 
-		webView.registerHandler("submitFromWeb", new BridgeHandler() {
+        webView.registerHandler("submitFromWeb", new BridgeHandler() {
 
-			@Override
-			public void handler(String data, CallBackFunction function) {
-				Log.i(TAG, "handler = submitFromWeb, data from web = " + data);
+            @Override
+            public void handler(String data, CallBackFunction function) {
+                Log.i(TAG, "handler = submitFromWeb, data from web = " + data);
+                tv.setText("来自网页的数据：" + data);
                 function.onCallBack("submitFromWeb exe, response data 中文 from Java");
-			}
+            }
 
-		});
+        });
 
         User user = new User();
         Location location = new Location();
@@ -91,46 +103,49 @@ public class MainActivity extends Activity implements OnClickListener {
         webView.callHandler("functionInJs", new Gson().toJson(user), new CallBackFunction() {
             @Override
             public void onCallBack(String data) {
+                tv.setText(data);
 
             }
         });
 
-        webView.send("hello");
+        webView.send("hello 您好您好您好");
 
-	}
+    }
 
-	public void pickFile() {
-		Intent chooserIntent = new Intent(Intent.ACTION_GET_CONTENT);
-		chooserIntent.setType("image/*");
-		startActivityForResult(chooserIntent, RESULT_CODE);
-	}
+    public void pickFile() {
+        Intent chooserIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        chooserIntent.setType("image/*");
+        startActivityForResult(chooserIntent, RESULT_CODE);
+    }
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-		if (requestCode == RESULT_CODE) {
-			if (null == mUploadMessage){
-				return;
-			}
-			Uri result = intent == null || resultCode != RESULT_OK ? null : intent.getData();
-			mUploadMessage.onReceiveValue(result);
-			mUploadMessage = null;
-		}
-	}
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        if (requestCode == RESULT_CODE) {
+            if (null == mUploadMessage) {
+                return;
+            }
+            Uri result = intent == null || resultCode != RESULT_OK ? null : intent.getData();
+            mUploadMessage.onReceiveValue(result);
+            mUploadMessage = null;
+        }
+    }
 
-	@Override
-	public void onClick(View v) {
-		if (button.equals(v)) {
-            webView.callHandler("functionInJs", "data from Java", new CallBackFunction() {
+    @Override
+    public void onClick(View v) {
+        if (button.equals(v)) {
+            webView.callHandler("functionInJs", "这是app类定义的字符串。 ", new CallBackFunction() {
 
-				@Override
-				public void onCallBack(String data) {
-					// TODO Auto-generated method stub
-					Log.i(TAG, "reponse data from js " + data);
-				}
+                @SuppressLint("SetTextI18n")
+                @Override
+                public void onCallBack(String data) {
+                    // TODO Auto-generated method stub
+                    Log.i(TAG, "reponse data from js " + data);
+                    tv.setText("reponse data from js: " + data);
+                }
 
-			});
-		}
+            });
+        }
 
-	}
+    }
 
 }
